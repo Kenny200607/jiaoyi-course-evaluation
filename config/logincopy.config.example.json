@@ -1,0 +1,54 @@
+{
+  "credentials": {
+    "webvpn_username": "",
+    "webvpn_password": ""
+  },
+  "browser": {
+    "chrome_binary": "",
+    "chromedriver_path": ""
+  },
+  "portal": {
+    "webvpn_login_url": "",
+    "teaching_system_text": "教务系统",
+    "schedule_text_keyword": "课表",
+    "course_evaluation_text": "课程评价",
+    "course_evaluation_url": "https://webvpn2.shsmu.edu.cn/https/77726476706e69737468656265737421fae05288327e7b586d059ce29d51367b9aac/UMC_Evaluation/StudentCourseRecord",
+    "selectors": {
+      "username": "username",
+      "password": "password",
+      "captcha_image_xpath": "//img[@id='captcha-img'] | //img[contains(@src, 'captcha')] | //img[contains(@onclick, 'captcha')]",
+      "captcha_input_xpath": "//input[@id='captcha'] | //input[@name='captcha'] | //input[contains(@placeholder, '验证码')] | //input[contains(@placeholder, '驗證碼')]",
+      "login_button_xpath": "//button[contains(., '登录')] | //button[contains(., '登入')] | //button[contains(., '登錄')] | //input[contains(@value, '登录')] | //input[contains(@value, '登入')] | //input[contains(@class, 'login_box_landing')] | //a[contains(., '登录')] | //a[contains(., '登入')]"
+    }
+  },
+  "download": {
+    "download_dir": "downloads",
+    "headless": false,
+    "close_browser_on_finish": false
+  },
+  "evaluation": {
+    "submit": false,
+    "maxCourses": null,
+    "dryRunLimit": 1,
+    "ratingStrategy": "last-radio-per-row",
+    "ratingValue": "5",
+    "comment": "",
+    "incompleteStatusLabels": ["未完成", "待评价", "待評價", "Incomplete"],
+    "courseEntryLabels": ["查看", "评价", "評價", "Reply", "Evaluate"],
+    "ratingRadioSelectors": [
+      "input[type='radio'][value='{ratingValue}']",
+      "input[type='radio'][aria-label*='{ratingValue}']"
+    ],
+    "ratingSelectSelectors": ["select"],
+    "commentSelectors": [
+      "textarea",
+      "input[type='text'][name*='comment']",
+      "input[type='text'][placeholder*='意见']",
+      "input[type='text'][placeholder*='意見']",
+      "input[type='text'][placeholder*='建议']",
+      "input[type='text'][placeholder*='建議']"
+    ],
+    "submitLabels": ["提交", "保存", "Submit", "Save"],
+    "backLabels": ["返回", "上一页", "上一頁", "Back"]
+  }
+}

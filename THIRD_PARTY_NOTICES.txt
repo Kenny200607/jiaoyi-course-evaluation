@@ -1,0 +1,24 @@
+Jiaoyi Course Evaluation
+
+The application source uses the accompanying MIT license. Its WebVPN login
+helper was extracted from the developer's local AutoCourseDownload project.
+The separate courseware API, PowerPoint and WeChat modules are not included.
+Autovisor is a configuration/distribution reference only; none of its
+executable, code, accounts or login sessions are redistributed.
+
+Full supplied third-party licenses, notices, Python's license and Selenium
+Manager's third-party notices are collected in third_party_licenses/ in the
+Windows ZIP. inventory.json lists exact installed package versions.
+
+Principal components:
+- Python: PSF license and included notices.
+- Selenium / Selenium Manager: Apache-2.0 and included third-party notices.
+- ddddocr / ONNX Runtime: MIT and included third-party notices/model resources.
+- NumPy: BSD-3-Clause and included component notices.
+- OpenCV: Apache-2.0 and included third-party notices.
+- Pillow: MIT-CMU and included component notices.
+- PyInstaller bootloader: GPL with its distribution exception in COPYING.txt.
+
+Chrome, Edge and downloaded browser drivers are not included in this ZIP.
+Their vendor licenses apply to the user's installed/downloaded files.
+School systems, course content and user data are not covered by this license.
