@@ -88,14 +88,14 @@ def collect_notices(destination: Path) -> None:
     (directory/'inventory.json').write_text(json.dumps(inventory, ensure_ascii=False, indent=2), encoding='utf-8')
 
 
-def archive_tree(directory: Path, archive: Path) -> None:
+def archive_tree(directory: Path, archive: Path, root_name: str | None = None) -> None:
     errors = audit_tree(directory)
     if errors:
         raise RuntimeError('\n'.join(errors))
     with zipfile.ZipFile(archive, 'w', zipfile.ZIP_DEFLATED, compresslevel=6) as bundle:
         for path in sorted(directory.rglob('*')):
             if path.is_file():
-                bundle.write(path, Path(directory.name)/path.relative_to(directory))
+                bundle.write(path, Path(root_name or directory.name)/path.relative_to(directory))
 
 
 def main(argv=None):
@@ -105,7 +105,7 @@ def main(argv=None):
     output = ROOT/'releases'
     output.mkdir(exist_ok=True)
     import tempfile
-    staging_root = ROOT/'.release-work/staging'
+    staging_root = Path(tempfile.gettempdir())/'jce-build'
     staging_root.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(dir=staging_root, prefix='release-') as temporary:
         staging = Path(temporary)
@@ -117,7 +117,8 @@ def main(argv=None):
             subprocess.run([sys.executable, '-m', 'PyInstaller', '--noconfirm', '--clean',
                             '--distpath', str(staging/'dist'), '--workpath', str(staging/'build'),
                             str(ROOT/'CourseEvaluation.spec')], cwd=ROOT, check=True)
-            portable = staging/f'JiaoyiCourseEvaluation-v{VERSION}-windows-x64'
+            portable_name = f'JiaoyiCourseEvaluation-v{VERSION}-windows-x64'
+            portable = staging/'app'
             shutil.copytree(staging/'dist/RunCourseEvaluation', portable)
             for name in ('config.example.ini', 'README.md', '使用說明.txt', 'LICENSE', 'THIRD_PARTY_NOTICES.txt', 'CHANGELOG.md'):
                 shutil.copy2(ROOT/name, portable/name)
@@ -128,8 +129,8 @@ def main(argv=None):
                 **source_provenance(ROOT),
                 'requirements_sha256': hashlib.sha256((ROOT/'requirements-lock.txt').read_bytes()).hexdigest(),
             }, indent=2), encoding='utf-8')
-            archives.append(output/f'{portable.name}.zip')
-            archive_tree(portable, archives[-1])
+            archives.append(output/f'{portable_name}.zip')
+            archive_tree(portable, archives[-1], root_name=portable_name)
         (output/'SHA256SUMS.txt').write_text(''.join(
             f'{hashlib.sha256(path.read_bytes()).hexdigest()}  {path.name}\n' for path in archives), encoding='utf-8')
     for path in archives:

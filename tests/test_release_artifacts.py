@@ -3,6 +3,7 @@ import tempfile
 import unittest
 import json
 import hashlib
+import zipfile
 from pathlib import Path
 
 
@@ -54,6 +55,16 @@ class ReleaseArtifactTests(unittest.TestCase):
         self.assertFalse(result['source_dirty'])
         source.write_bytes(b'print("edited")\n')
         self.assertTrue(source_provenance(self.root)['source_dirty'])
+
+    def test_short_build_directory_keeps_friendly_archive_root(self):
+        from tools.build_release import archive_tree
+        stage = self.root/'app'
+        stage.mkdir()
+        (stage/'readme.txt').write_text('Public file')
+        archive = self.root/'release.zip'
+        archive_tree(stage, archive, root_name='JiaoyiCourseEvaluation-v0.1.0-windows-x64')
+        with zipfile.ZipFile(archive) as bundle:
+            self.assertEqual(bundle.namelist(), ['JiaoyiCourseEvaluation-v0.1.0-windows-x64/readme.txt'])
 
 
 if __name__ == '__main__':
