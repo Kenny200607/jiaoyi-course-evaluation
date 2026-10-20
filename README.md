@@ -108,6 +108,4 @@ $env:TEST_BROWSER = 'Chrome' # 或 Edge
 應用程式原始碼採 MIT，見 `LICENSE`。套件保留各自授權；Windows ZIP 的
 `third_party_licenses/` 收錄授權、聲明及版本清單。
 登入流程沿用本地 AutoCourseDownload 的 Selenium 實作，不含其下載、PowerPoint 或微信功能。
-設定方式參考 Autovisor，發布與文件組織參考
-[交醫課件下載器](https://github.com/fishchipssss/jiaoyi-courseware-downloader)。
 學校系統、課件及使用者資料不屬於本倉庫的授權內容。
