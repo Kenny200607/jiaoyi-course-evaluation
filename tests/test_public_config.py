@@ -8,7 +8,7 @@ from logincopy import DEFAULT_CONFIG
 
 class PublicConfigTests(unittest.TestCase):
     def setUp(self):
-        self.root = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        self.root = Path(self.enterContext(tempfile.TemporaryDirectory())).resolve()
 
     def load(self, text, filename='config.ini'):
         from release_config import load_public_config

@@ -9,7 +9,7 @@ from pathlib import Path
 from release_config import FirstRunConfig, app_directory, load_public_config, validate_config
 from privacy import RedactingStream, redact
 
-VERSION = '0.1.0'
+VERSION = '0.1.1'
 
 
 def main(argv=None, base_dir=None) -> int:

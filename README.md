@@ -8,7 +8,7 @@
 
 ## 推薦：下載 Windows ZIP
 
-1. 從本倉庫 **Releases** 下載 `JiaoyiCourseEvaluation-v0.1.0-windows-x64.zip`。
+1. 從本倉庫 **Releases** 下載 `JiaoyiCourseEvaluation-v0.1.1-windows-x64.zip`。
 2. 完整解壓到可寫資料夾，保留 `_internal` 和附帶文件。
 3. 用記事本編輯 `config.ini`，填自己的設定。
 4. 雙擊 `RunCourseEvaluation.exe`。
