@@ -19,9 +19,10 @@ PUBLIC_FILES = (
     '.gitignore', '.gitattributes', '.env.example', 'app.py', 'logincopy.py',
     'browser_support.py', 'release_config.py', 'privacy.py', 'config.example.ini',
     'config/logincopy.config.example.json', 'README.md', 'LICENSE',
-    'THIRD_PARTY_NOTICES.txt', 'CHANGELOG.md', '使用說明.txt',
+    'THIRD_PARTY_NOTICES.txt', 'CHANGELOG.md', '使用说明.txt',
     'requirements.txt', 'requirements-lock.txt', 'requirements-build.txt',
     'start_evaluation.cmd', 'CourseEvaluation.spec', '.github/workflows/checks.yml',
+    '.github/workflows/portable-windows.yml', 'tools/verify_portable.ps1',
 )
 
 
@@ -120,7 +121,7 @@ def main(argv=None):
             portable_name = f'JiaoyiCourseEvaluation-v{VERSION}-windows-x64'
             portable = staging/'app'
             shutil.copytree(staging/'dist/RunCourseEvaluation', portable)
-            for name in ('config.example.ini', 'README.md', '使用說明.txt', 'LICENSE', 'THIRD_PARTY_NOTICES.txt', 'CHANGELOG.md'):
+            for name in ('config.example.ini', 'README.md', '使用说明.txt', 'LICENSE', 'THIRD_PARTY_NOTICES.txt', 'CHANGELOG.md'):
                 shutil.copy2(ROOT/name, portable/name)
             shutil.copy2(ROOT/'config.example.ini', portable/'config.ini')
             collect_notices(portable)

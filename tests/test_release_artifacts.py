@@ -43,6 +43,27 @@ class ReleaseArtifactTests(unittest.TestCase):
         (self.root/'config.ini').write_text('[user-account]\nusername=\npassword=\n[evaluation-option]\nsubmit=false\n')
         self.assertEqual(audit_tree(self.root), [])
 
+    def test_audit_rejects_credentials_in_legacy_example_files(self):
+        from tools.audit_release import audit_tree
+        (self.root/'.env.example').write_text('USER_ID=student\nUSER_PASSWORD=private\n')
+        (self.root/'logincopy.config.example.json').write_text(json.dumps({
+            'credentials': {'webvpn_username': 'student', 'webvpn_password': 'private'},
+            'evaluation': {'submit': True},
+        }))
+        errors = audit_tree(self.root)
+        self.assertTrue(any('.env.example' in error for error in errors))
+        self.assertTrue(any('Populated credentials' in error and '.json' in error for error in errors))
+        self.assertTrue(any('Unsafe submission default' in error and '.json' in error for error in errors))
+
+    def test_audit_accepts_placeholder_env_and_blank_legacy_example(self):
+        from tools.audit_release import audit_tree
+        (self.root/'.env.example').write_text('USER_ID="your_student_id"\nUSER_PASSWORD="your_password"\n')
+        (self.root/'logincopy.config.example.json').write_text(json.dumps({
+            'credentials': {'webvpn_username': '', 'webvpn_password': ''},
+            'evaluation': {'submit': False},
+        }))
+        self.assertEqual(audit_tree(self.root), [])
+
     def test_source_provenance_works_without_git_and_detects_edited_archive(self):
         from tools.build_release import source_provenance
         source = self.root/'app.py'

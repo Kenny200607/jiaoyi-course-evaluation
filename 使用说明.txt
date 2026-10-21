@@ -1,0 +1,15 @@
+交医课程评价工具 v0.1.2
+
+1. 完整解压 ZIP 到自己的可写文件夹，保留 _internal 及附带文件。
+2. 用记事本编辑 config.ini：填自己的账号密码，或两项都留空手动登录。
+3. browser-option 的 driver 可填 Chrome 或 Edge；exe_path 留空自动寻找。
+4. 双击 RunCourseEvaluation.exe。默认只预览，不提交。
+5. 确认预览选项合适后，可设 submit=true；每次正式执行仍须输入 SUBMIT 确认。
+
+使用已安装的 Chrome／Edge，不需安装 Python。首次使用或浏览器更新后，
+程序可能需要连网取得匹配驱动。请勿直接在 ZIP 内启动程序。
+
+账号密码以明文保存在本机 config.ini；请勿分享填好的文件、logs 或登录资料。
+评分方式是每列最后一个单选项，不保证在所有表单等于特定分数。
+这不是学校官方产品；请只用自己的账号，遵守校方规定。
+详细参数、源代码启动和问题排查请看 README.md。

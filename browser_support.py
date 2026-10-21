@@ -9,7 +9,7 @@ from pathlib import Path
 def browser_name(config: dict) -> str:
     name = config.get('driver', 'Chrome')
     if not isinstance(name, str) or name.lower() not in ('chrome', 'edge'):
-        raise ValueError('瀏覽器只支援 Chrome 或 Edge。')
+        raise ValueError('浏览器只支援 Chrome 或 Edge。')
     return name.capitalize()
 
 
@@ -18,7 +18,7 @@ def find_browser(config: dict, roots=None) -> str | None:
     explicit = config.get('chrome_binary')
     if explicit:
         if not Path(explicit).is_file():
-            raise ValueError('找不到指定的瀏覽器程式。')
+            raise ValueError('找不到指定的浏览器程序。')
         return str(Path(explicit).resolve())
     if roots is None:
         roots = [Path(os.environ.get(key, fallback)) for key, fallback in (

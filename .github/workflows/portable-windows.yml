@@ -1,0 +1,55 @@
+name: Portable Windows verification
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Published release tag to download and verify
+        required: true
+        default: v0.1.2
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  portable:
+    name: Portable on ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-2022, windows-2025]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Download actual release assets
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ($env:RELEASE_TAG -notmatch '^v\d+\.\d+\.\d+$') { throw 'Invalid version tag' }
+          $download = Join-Path $env:RUNNER_TEMP 'jce-download'
+          New-Item -ItemType Directory -Path $download -Force | Out-Null
+          gh release download $env:RELEASE_TAG --repo $env:GITHUB_REPOSITORY --pattern '*-windows-x64.zip' --pattern SHA256SUMS.txt --dir $download
+          if ($LASTEXITCODE -ne 0) { throw 'Release download failed' }
+          $commit = gh api "repos/$env:GITHUB_REPOSITORY/commits/$env:RELEASE_TAG" --jq .sha
+          if ($LASTEXITCODE -ne 0) { throw 'Could not resolve release commit' }
+          "RELEASE_COMMIT=$commit" >> $env:GITHUB_ENV
+      - name: Verify portable application without installing dependencies
+        shell: pwsh
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          ./tools/verify_portable.ps1 -DownloadDirectory (Join-Path $env:RUNNER_TEMP 'jce-download') -WorkingRoot (Join-Path $env:RUNNER_TEMP '便携测试 空格') -ReleaseTag $env:RELEASE_TAG -ExpectedCommit $env:RELEASE_COMMIT
+      - name: Save verification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: portable-${{ matrix.os }}
+          path: ${{ runner.temp }}/便携测试 空格/evidence
+          if-no-files-found: warn

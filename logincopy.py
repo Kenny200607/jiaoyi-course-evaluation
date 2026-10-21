@@ -452,7 +452,7 @@ class LoginCopySession:
             import re
             ocr = ddddocr.DdddOcr(show_ad=False)
         except Exception:
-            print("OCR 無法啟動，請在瀏覽器手動完成驗證。")
+            print("OCR 无法启动，请在浏览器手动完成验证。")
             return False
 
         s = self._selenium
@@ -487,7 +487,7 @@ class LoginCopySession:
             captcha_input.send_keys(str(ans))
             return True
         except Exception as e:
-            print(f"   ❌ 自動辨識失敗: {e}")
+            print(f"   ❌ 自动辨识失败: {e}")
             return False
     
     def __enter__(self) -> "LoginCopySession":
@@ -964,7 +964,7 @@ class LoginCopySession:
                     return
 
                 if not credentials.get("webvpn_username") and not credentials.get("webvpn_password"):
-                    print("請在本次瀏覽器完成 WebVPN 登入；程式會等待登入完成。")
+                    print("请在本次浏览器完成 WebVPN 登录；程序会等待登录完成。")
                     self._wait_until_webvpn_logged_in()
                     self._print_page_state("03-after-manual-login")
                     return
@@ -1116,9 +1116,9 @@ class LoginCopySession:
 
             if not evaluation["submit"]:
                 try:
-                    input("表單已填好，尚未提交。請在瀏覽器檢查後按 Enter 返回清單：")
+                    input("表单已填好，尚未提交。请在浏览器检查后按 Enter 返回清单：")
                 except EOFError:
-                    print("沒有互動輸入；保留目前預覽頁，未提交。")
+                    print("没有互动输入；保留目前预览页，未提交。")
                     return completed
 
             self._return_to_course_evaluation_list()
@@ -1649,7 +1649,7 @@ class LoginCopySession:
                 login_btn.click()
 
             except Exception as e:
-                print(f"   ⚠️ 自動點擊失敗，請手動點擊登錄: {e}")
+                print(f"   ⚠️ 自动点击失败，请手动点击登录: {e}")
         # -----------------------
 
         # 原有的提示依然保留，作為保險

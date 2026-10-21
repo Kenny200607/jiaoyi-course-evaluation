@@ -9,23 +9,23 @@ from pathlib import Path
 from release_config import FirstRunConfig, app_directory, load_public_config, validate_config
 from privacy import RedactingStream, redact
 
-VERSION = '0.1.1'
+VERSION = '0.1.2'
 
 
 def main(argv=None, base_dir=None) -> int:
     import logincopy
-    parser = argparse.ArgumentParser(description='交醫課程評價工具：預覽為預設模式，正式提交前須確認。')
+    parser = argparse.ArgumentParser(description='交医课程评价工具：预览为默认模式，正式提交前须确认。')
     parser.add_argument('--version', action='version', version=VERSION)
-    parser.add_argument('--config', type=Path, help='INI 或相容的 JSON 設定檔')
+    parser.add_argument('--config', type=Path, help='INI 或兼容的 JSON 设置档')
     parser.add_argument('--mode', choices=['schedule', 'evaluation'], default='evaluation')
-    parser.add_argument('--submit', action='store_true', help='啟用正式提交（仍須本次確認）')
-    parser.add_argument('--dry-run', action='store_true', help='強制預覽，即使設定已啟用正式提交')
+    parser.add_argument('--submit', action='store_true', help='启用正式提交（仍须本次确认）')
+    parser.add_argument('--dry-run', action='store_true', help='强制预览，即使设置已启用正式提交')
     parser.add_argument('--max-courses', type=int)
     parser.add_argument('--dry-run-limit', type=int)
-    parser.add_argument('--check', action='store_true', help='檢查設定，不啟動瀏覽器')
-    parser.add_argument('--diagnose', action='store_true', help='檢查依賴及 OCR 模型，不登入學校')
-    parser.add_argument('--check-browser', action='store_true', help='開啟本地測試頁檢查瀏覽器，不登入學校')
-    parser.add_argument('--pause', action='store_true', help='結束時保留提示，適合雙擊啟動')
+    parser.add_argument('--check', action='store_true', help='检查设置，不启动浏览器')
+    parser.add_argument('--diagnose', action='store_true', help='检查依赖及 OCR 模型，不登录学校')
+    parser.add_argument('--check-browser', action='store_true', help='开启本地测试页检查浏览器，不登录学校')
+    parser.add_argument('--pause', action='store_true', help='结束时保留提示，适合双击启动')
     args = parser.parse_args(argv)
     root = Path(base_dir or app_directory()).resolve()
     logger = None
@@ -35,7 +35,7 @@ def main(argv=None, base_dir=None) -> int:
         config = load_public_config(logincopy.DEFAULT_CONFIG, args.config, root)
         secrets = tuple(config['credentials'].values())
         if args.submit and args.dry_run:
-            raise ValueError('不能同時使用 --submit 和 --dry-run。')
+            raise ValueError('不能同时使用 --submit 和 --dry-run。')
         if args.submit:
             config['evaluation']['submit'] = True
         if args.dry_run:
@@ -81,19 +81,19 @@ def main(argv=None, base_dir=None) -> int:
             with logincopy.LoginCopySession(smoke) as session:
                 session.driver.get('data:text/html,<title>Local browser check</title><p>OK</p>')
                 if session.driver.title != 'Local browser check':
-                    raise RuntimeError('本地瀏覽器測試頁未正確載入。')
+                    raise RuntimeError('本地浏览器测试页未正确载入。')
                 print('Local browser check: PASS')
             return 0
-        print('模式：', '正式提交' if config['evaluation']['submit'] else '預覽（不提交）')
-        print('評分方式：每列最後一個單選項；請先預覽確認頁面選項。')
-        print('課程上限：', config['evaluation']['maxCourses'] or '全部有效未完成記錄')
+        print('模式：', '正式提交' if config['evaluation']['submit'] else '预览（不提交）')
+        print('评分方式：每列最后一个单选项；请先预览确认页面选项。')
+        print('课程上限：', config['evaluation']['maxCourses'] or '全部有效未完成记录')
         if args.mode == 'evaluation' and config['evaluation']['submit']:
             try:
-                approved = input('本次要正式提交嗎？輸入 SUBMIT 確認，其餘輸入取消：').strip() == 'SUBMIT'
+                approved = input('本次要正式提交吗？输入 SUBMIT 确认，其余输入取消：').strip() == 'SUBMIT'
             except EOFError:
                 approved = False
             if not approved:
-                print('已取消，未啟動評價。')
+                print('已取消，未启动评价。')
                 return 0
         if args.mode == 'evaluation':
             logincopy.run_evaluation_flow(config)
@@ -107,7 +107,7 @@ def main(argv=None, base_dir=None) -> int:
         print('已停止。', file=sys.stderr)
         return 130
     except Exception as exc:
-        print('錯誤：' + redact(str(exc), secrets), file=sys.stderr)
+        print('错误：' + redact(str(exc), secrets), file=sys.stderr)
         return 1
     finally:
         sys.stdout.flush()
@@ -117,7 +117,7 @@ def main(argv=None, base_dir=None) -> int:
         sys.stdout, sys.stderr = original
         if args.pause:
             try:
-                input('按 Enter 結束…')
+                input('按 Enter 结束…')
             except EOFError:
                 pass
 
