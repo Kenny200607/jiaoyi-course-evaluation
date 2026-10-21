@@ -120,6 +120,4 @@ GitHub 的 Windows 镜像本身预装开发工具；这项验证不等同于在�
 应用程序源代码采 MIT，见 `LICENSE`。依赖包保留各自授权；Windows ZIP 的
 `third_party_licenses/` 收录授权、声明及版本清单。
 登录流程沿用本地 AutoCourseDownload 的 Selenium 实作，不含其下载、PowerPoint 或微信功能。
-设置方式参考 Autovisor，发布与文件组织参考
-[交医课件下载器](https://github.com/fishchipssss/jiaoyi-courseware-downloader)。
 学校系统、课件及使用者资料不属于本仓库的授权内容。
