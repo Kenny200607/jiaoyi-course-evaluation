@@ -58,6 +58,7 @@ function Invoke-Portable([string]$Label, [string[]]$Arguments, [string]$InputTex
 $version = Invoke-Portable -Label 'version' -Arguments @('--version')
 if ($version.Trim() -ne $ReleaseTag.Substring(1)) { throw 'Application version mismatch' }
 $ini = Join-Path $applicationRoot 'config.ini'
+$supportsLevels = [version]$ReleaseTag.Substring(1) -ge [version]'0.1.3'
 Remove-Item -LiteralPath $ini
 $first = Invoke-Portable -Label 'first-run' -Arguments @() -InputText ''
 if (-not (Test-Path -LiteralPath $ini) -or $first -notmatch '已建立 config.ini') { throw 'First-run setup failed' }
@@ -66,6 +67,14 @@ foreach ($browser in @('Chrome', 'Edge')) {
     $check = Invoke-Portable -Label "$browser-config" -Arguments @('--check')
     $config = $check | ConvertFrom-Json
     if ($config.login -ne 'manual' -or $config.evaluation_submit -ne $false -or $config.browser -ne $browser) { throw 'Unsafe or invalid configuration defaults' }
+    if ($supportsLevels) {
+        if ($config.rating_level -ne 'highest') { throw 'Highest rating default missing' }
+        [IO.File]::AppendAllText($ini, "`n[evaluation-option]`nrating_level=3`n")
+        $selected = Invoke-Portable -Label "$browser-rating-config" -Arguments @('--check')
+        if (($selected | ConvertFrom-Json).rating_level -ne 3) { throw 'Configured rating ignored' }
+        $overridden = Invoke-Portable -Label "$browser-rating-override" -Arguments @('--rating-level', '5', '--check')
+        if (($overridden | ConvertFrom-Json).rating_level -ne 5) { throw 'CLI rating override ignored' }
+    }
     $diagnose = Invoke-Portable -Label "$browser-OCR" -Arguments @('--diagnose')
     if ($diagnose -notmatch 'model loaded successfully' -or $diagnose -notmatch 'Selenium Manager: available' -or $diagnose -notmatch 'Browser: .+ found') { throw 'Dependency or browser detection failed' }
     $browserCheck = Invoke-Portable -Label "$browser-start" -Arguments @('--check-browser')
@@ -73,6 +82,7 @@ foreach ($browser in @('Chrome', 'Edge')) {
 }
 $cancel = Invoke-Portable -Label 'cancel-submit' -Arguments @('--submit') -InputText 'CANCEL'
 if ($cancel -notmatch '已取消') { throw 'Submission cancellation failed' }
+if ($supportsLevels -and ($cancel -notmatch '交医课程评价工具' -or $cancel -notmatch '第 3 级')) { throw 'Application title or rating summary missing' }
 $result = [ordered]@{
     release = $ReleaseTag
     source_commit = $info.source_commit
@@ -80,7 +90,7 @@ $result = [ordered]@{
     os = [Environment]::OSVersion.VersionString
     image = $env:ImageOS
     image_version = $env:ImageVersion
-    checks = @('checksum', 'provenance', 'version', 'first-run', 'manual-preview-defaults', 'OCR', 'Chrome', 'Edge', 'cancel-submit', 'Unicode-space-path')
+    checks = @('checksum', 'provenance', 'version', 'first-run', 'manual-preview-defaults', 'OCR', 'Chrome', 'Edge', 'cancel-submit', 'Unicode-space-path') + $(if ($supportsLevels) { @('highest-rating-default', 'rating-config', 'rating-cli-override', 'Chinese-title') } else { @() })
     external_python_path = $false
     dependencies_installed_by_test = $false
     school_login_or_submission = $false

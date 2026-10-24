@@ -6,7 +6,7 @@ on:
       release_tag:
         description: Published release tag to download and verify
         required: true
-        default: v0.1.2
+        default: v0.1.3
         type: string
 
 permissions:

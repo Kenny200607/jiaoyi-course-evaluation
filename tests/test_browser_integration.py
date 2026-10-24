@@ -7,7 +7,7 @@ import threading
 import time
 import unittest
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from urllib.parse import parse_qs, urlsplit
+from urllib.parse import parse_qs, quote, urlsplit
 from urllib.request import urlopen
 
 from logincopy import DEFAULT_CONFIG, LoginCopySession
@@ -121,6 +121,96 @@ class BrowserIntegrationTests(unittest.TestCase):
 
     def open_form(self, mode):
         self.session.driver.get(self.origin + '/UMC_Evaluation/Reply?recordId=' + mode)
+
+    def tearDown(self):
+        self.session.config['evaluation'].pop('ratingLevel', None)
+
+    def open_rating_form(self, counts=(5, 5), *, flat=False, checked=1, disabled=None, hidden_inputs=None):
+        rows = []
+        for question, count in enumerate(counts, 1):
+            options = []
+            for level in range(1, count+1):
+                selected = ' checked' if level == checked else ''
+                unavailable = ' disabled' if disabled == (question, level) else ''
+                style = ' style="display:none"' if hidden_inputs == question else ''
+                item = (f'<label class="iradio{selected}"><input type="radio" name="q{question}" '
+                        f'value="opaque-{question}-{level}"{selected}{unavailable}{style}>等级 {level}</label>')
+                options.append(item if flat else '<td>'+item+'</td>')
+            rows.append(('<div>' if flat else '<tr>')+''.join(options)+('</div>' if flat else '</tr>'))
+        body = ''.join(rows) if flat else '<table>'+''.join(rows)+'</table>'
+        self.session.driver.get('data:text/html;charset=utf-8,'+quote('<!doctype html><meta charset="utf-8"><form>'+body+'</form>'))
+
+    def selected_ratings(self):
+        return self.session.driver.execute_script('return Array.from(document.querySelectorAll("input:checked"), element => element.value);')
+
+    def test_highest_rating_adapts_to_each_questions_option_count(self):
+        self.open_rating_form((3, 5))
+        self.session.fill_evaluation_form()
+        self.assertEqual(self.selected_ratings(), ['opaque-1-3', 'opaque-2-5'])
+
+    def test_requested_rating_spans_cells_and_replaces_previous_selection(self):
+        self.open_rating_form(checked=5)
+        self.session.config['evaluation']['ratingLevel'] = 3
+        self.session.fill_evaluation_form()
+        self.assertEqual(self.selected_ratings(), ['opaque-1-3', 'opaque-2-3'])
+        styled = self.session.driver.execute_script('return Array.from(document.querySelectorAll("label.checked input"), element => element.value);')
+        self.assertEqual(styled, ['opaque-1-3', 'opaque-2-3'])
+
+    def test_requested_rating_works_without_table_rows(self):
+        self.open_rating_form(flat=True)
+        self.session.config['evaluation']['ratingLevel'] = 2
+        self.session.fill_evaluation_form()
+        self.assertEqual(self.selected_ratings(), ['opaque-1-2', 'opaque-2-2'])
+
+    def test_decorated_hidden_inputs_replace_prechecked_wrong_level(self):
+        self.open_rating_form(hidden_inputs=2)
+        self.session.config['evaluation']['ratingLevel'] = 3
+        self.session.fill_evaluation_form()
+        self.assertEqual(self.selected_ratings(), ['opaque-1-3', 'opaque-2-3'])
+
+    def test_decorated_unavailable_level_cannot_bypass_preflight(self):
+        self.open_rating_form((5, 2), hidden_inputs=2)
+        self.session.config['evaluation']['ratingLevel'] = 3
+        with self.assertRaisesRegex(RuntimeError, '等级'):
+            self.session.fill_evaluation_form()
+        self.assertEqual(self.selected_ratings(), ['opaque-1-1', 'opaque-2-1'])
+
+    def test_hidden_template_group_is_not_a_visible_question(self):
+        self.open_rating_form()
+        self.session.driver.execute_script('''
+            document.querySelector('table').insertAdjacentHTML('beforeend',
+              '<tr style="display:none"><td><label><input type="radio" name="template" value="template">Template</label></td></tr>');
+        ''')
+        self.session.config['evaluation']['ratingLevel'] = 3
+        self.session.fill_evaluation_form()
+        self.assertEqual(self.selected_ratings(), ['opaque-1-3', 'opaque-2-3'])
+
+    def test_unavailable_level_stops_before_changing_any_group(self):
+        self.open_rating_form((5, 2))
+        self.session.config['evaluation']['ratingLevel'] = 3
+        with self.assertRaisesRegex(RuntimeError, '等级'):
+            self.session.fill_evaluation_form()
+        self.assertEqual(self.selected_ratings(), ['opaque-1-1', 'opaque-2-1'])
+
+    def test_disabled_level_stops_before_changing_any_group(self):
+        self.open_rating_form(disabled=(2, 3))
+        self.session.config['evaluation']['ratingLevel'] = 3
+        with self.assertRaisesRegex(RuntimeError, '等级'):
+            self.session.fill_evaluation_form()
+        self.assertEqual(self.selected_ratings(), ['opaque-1-1', 'opaque-2-1'])
+
+    def test_empty_rating_page_cannot_be_treated_as_filled(self):
+        self.session.driver.get('data:text/html,<p>No rating form here</p>')
+        with self.assertRaisesRegex(RuntimeError, '评分'):
+            self.session.fill_evaluation_form()
+
+    def test_same_radio_name_in_separate_forms_is_not_one_rating_group(self):
+        body = ''.join('<form>'+''.join(f'<label><input type="radio" name="grade" value="{form}-{level}">{level}</label>'
+                                       for level in range(1, 6))+'</form>' for form in (1, 2))
+        self.session.driver.get('data:text/html,'+quote(body))
+        self.session.config['evaluation']['ratingLevel'] = 2
+        self.session.fill_evaluation_form()
+        self.assertEqual(self.selected_ratings(), ['1-2', '2-2'])
 
     def test_server_success_survives_page_callback_exception(self):
         self.open_form('success')

@@ -9,11 +9,15 @@ from pathlib import Path
 from release_config import FirstRunConfig, app_directory, load_public_config, validate_config
 from privacy import RedactingStream, redact
 
-VERSION = '0.1.2'
+VERSION = '0.1.3'
+APP_NAME = '交医课程评价工具'
 
 
 def main(argv=None, base_dir=None) -> int:
     import logincopy
+    if sys.platform == 'win32':
+        import ctypes
+        ctypes.windll.kernel32.SetConsoleTitleW(APP_NAME)
     parser = argparse.ArgumentParser(description='交医课程评价工具：预览为默认模式，正式提交前须确认。')
     parser.add_argument('--version', action='version', version=VERSION)
     parser.add_argument('--config', type=Path, help='INI 或兼容的 JSON 设置档')
@@ -22,6 +26,7 @@ def main(argv=None, base_dir=None) -> int:
     parser.add_argument('--dry-run', action='store_true', help='强制预览，即使设置已启用正式提交')
     parser.add_argument('--max-courses', type=int)
     parser.add_argument('--dry-run-limit', type=int)
+    parser.add_argument('--rating-level', help='评分等级：highest（默认最高级）或 1、2、3 等正整数')
     parser.add_argument('--check', action='store_true', help='检查设置，不启动浏览器')
     parser.add_argument('--diagnose', action='store_true', help='检查依赖及 OCR 模型，不登录学校')
     parser.add_argument('--check-browser', action='store_true', help='开启本地测试页检查浏览器，不登录学校')
@@ -44,6 +49,9 @@ def main(argv=None, base_dir=None) -> int:
             config['evaluation']['maxCourses'] = args.max_courses
         if args.dry_run_limit is not None:
             config['evaluation']['dryRunLimit'] = args.dry_run_limit
+        if args.rating_level is not None:
+            config['evaluation']['ratingLevel'] = args.rating_level
+            config['evaluation']['ratingStrategy'] = 'last-radio-per-row'
         validate_config(config, root)
         if args.check:
             print(json.dumps({
@@ -53,6 +61,7 @@ def main(argv=None, base_dir=None) -> int:
                 'evaluation_submit': config['evaluation']['submit'],
                 'evaluation_max_courses': config['evaluation']['maxCourses'],
                 'dry_run_limit': config['evaluation']['dryRunLimit'],
+                'rating_level': config['evaluation']['ratingLevel'],
             }, ensure_ascii=False))
             return 0
         (root/'logs').mkdir(exist_ok=True)
@@ -84,8 +93,11 @@ def main(argv=None, base_dir=None) -> int:
                     raise RuntimeError('本地浏览器测试页未正确载入。')
                 print('Local browser check: PASS')
             return 0
+        print(APP_NAME)
         print('模式：', '正式提交' if config['evaluation']['submit'] else '预览（不提交）')
-        print('评分方式：每列最后一个单选项；请先预览确认页面选项。')
+        level = config['evaluation']['ratingLevel']
+        print('评分等级：', '最高级（每题最后一项）' if level == 'highest' else f'第 {level} 级（每题第 {level} 项）')
+        print('请先预览确认页面选项从低到高排列；指定等级不存在时会停止。')
         print('课程上限：', config['evaluation']['maxCourses'] or '全部有效未完成记录')
         if args.mode == 'evaluation' and config['evaluation']['submit']:
             try:

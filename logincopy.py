@@ -199,6 +199,7 @@ DEFAULT_CONFIG = {
         "maxCourses": None,
         "dryRunLimit": 1,
         "ratingStrategy": "last-radio-per-row",
+        "ratingLevel": "highest",
         "ratingValue": "5",
         "comment": "",
         "incompleteStatusLabels": ["未完成", "待评价", "待評價", "Incomplete"],
@@ -309,27 +310,32 @@ def selectors_for_rating(selectors: list[str], rating_value: str) -> list[str]:
 
 def last_radio_per_row_script() -> str:
     return r"""
-        const rows = Array.from(document.querySelectorAll('tr'));
+        const level = arguments[0] === undefined ? 'highest' : arguments[0];
 
-        function isUsable(element) {
-            if (!element || element.disabled) return false;
+        function isShown(element) {
+            if (!element || !element.getClientRects().length) return false;
             const style = window.getComputedStyle(element);
             return style.display !== 'none' && style.visibility !== 'hidden';
         }
 
-        function chooseRadio(target) {
-            if (!target || !isUsable(target)) return false;
-
-            target.scrollIntoView({ block: 'center', inline: 'center' });
-
-            const label = target.closest('label');
+        function controlsFor(target) {
+            const label = target.closest('label') || Array.from(target.labels || []).find(isShown);
             const wrapper = target.closest(
                 '[class*="iradio"], [class*="iCheck"], [class*="icheck"], [class*="radio"]'
-            ) || target.parentElement;
+            );
             const helper = wrapper
                 ? wrapper.querySelector('ins, .iCheck-helper, [class*="iradio"], [class*="iCheck"], [class*="icheck"]')
                 : null;
-            const clickable = label || helper || wrapper || target;
+            const singleWrapper = wrapper && wrapper.querySelectorAll('input[type="radio"]').length === 1;
+            const clickable = [label, singleWrapper ? helper : null, singleWrapper ? wrapper : null, target].find(isShown);
+            return {wrapper, clickable};
+        }
+
+        function chooseRadio(target) {
+            if (!target || target.matches(':disabled')) return false;
+            const {wrapper, clickable} = controlsFor(target);
+            if (!clickable) return false;
+            clickable.scrollIntoView({ block: 'center', inline: 'center' });
 
             if (window.jQuery && window.jQuery.fn && window.jQuery.fn.iCheck) {
                 window.jQuery(target).iCheck('check');
@@ -355,38 +361,54 @@ def last_radio_per_row_script() -> str:
             return target.checked;
         }
 
-        let checked = 0;
-
-        for (const row of rows) {
-            const rowStyle = window.getComputedStyle(row);
-            if (rowStyle.display === 'none' || rowStyle.visibility === 'hidden') continue;
-
-            const cellsWithRadios = Array.from(row.querySelectorAll('td, th')).filter((cell) => {
-                return cell.querySelector('input[type="radio"]');
-            });
-            if (!cellsWithRadios.length) continue;
-
-            const lastCell = cellsWithRadios[cellsWithRadios.length - 1];
-            const radios = Array.from(lastCell.querySelectorAll('input[type="radio"]'));
-            const target = radios[radios.length - 1];
-            if (chooseRadio(target)) checked += 1;
+        if (level !== 'highest' && (!Number.isInteger(level) || level < 1)) {
+            return {checked: 0, error: '评分等级无效，已停止，未提交。'};
         }
 
-        if (checked === 0) {
-            const groups = new Map();
-            document.querySelectorAll('input[type="radio"]').forEach((radio) => {
-                if (!radio.name) return;
-                if (!groups.has(radio.name)) groups.set(radio.name, []);
-                groups.get(radio.name).push(radio);
-            });
+        const owners = new Map();
+        for (const radio of document.querySelectorAll('input[type="radio"]')) {
+            const row = radio.closest('tr');
+            // Native inputs may be hidden by widgets while their labels remain visible.
+            // Keep every option in a visible question so indexes and preflight cannot skip it.
+            const container = row || radio.closest('label') || radio.parentElement;
+            if (!isShown(container) && !controlsFor(radio).clickable) continue;
+            const owner = radio.form || document;
+            const key = radio.name || row || radio.parentElement;
+            if (!owners.has(owner)) owners.set(owner, new Map());
+            const groups = owners.get(owner);
+            if (!groups.has(key)) groups.set(key, []);
+            groups.get(key).push(radio);
+        }
 
+        const choices = [];
+        for (const groups of owners.values()) {
             for (const group of groups.values()) {
-                const target = group[group.length - 1];
-                if (chooseRadio(target)) checked += 1;
+                const index = level === 'highest' ? group.length - 1 : level - 1;
+                const target = group[index];
+                if (!target || !controlsFor(target).clickable || target.matches(':disabled')) {
+                    return {checked: 0, error: '所选评分等级不存在或不可用，已停止，未提交。'};
+                }
+                choices.push({group, target});
             }
         }
 
-        return checked;
+        let checked = 0;
+        for (const {group, target} of choices) {
+            if (!chooseRadio(target) || !target.checked) {
+                return {checked, error: '评分等级选择失败，已停止，未提交。'};
+            }
+            for (const radio of group) {
+                if (radio === target) continue;
+                radio.checked = false;
+                radio.removeAttribute('checked');
+                const wrapper = radio.closest('[class*="iradio"], [class*="iCheck"], [class*="icheck"], [class*="radio"]');
+                if (wrapper && wrapper.querySelectorAll('input[type="radio"]').length === 1) {
+                    wrapper.classList.remove('checked');
+                }
+            }
+            checked += 1;
+        }
+        return {checked, error: null};
     """
 
 
@@ -1146,6 +1168,8 @@ class LoginCopySession:
 
         if evaluation.get("ratingStrategy") == "last-radio-per-row":
             checked_count = self._check_last_radio_per_row()
+            if not checked_count:
+                raise RuntimeError("未找到可用的评分选项，已停止，未提交。")
 
         if checked_count == 0:
             for selector in selectors_for_rating(
@@ -1482,7 +1506,12 @@ class LoginCopySession:
         return base_url.split("/UMC_Evaluation/", 1)[0] + app_path
 
     def _check_last_radio_per_row(self) -> int:
-        return int(self.driver.execute_script(last_radio_per_row_script()) or 0)
+        result = self.driver.execute_script(
+            last_radio_per_row_script(), self.config['evaluation'].get('ratingLevel', 'highest')
+        ) or {}
+        if result.get('error'):
+            raise RuntimeError(result['error'])
+        return int(result.get('checked', 0))
 
     def _wait_for_evaluation_form(self, timeout_seconds: int = 20) -> None:
         timeout_at = time.time() + timeout_seconds

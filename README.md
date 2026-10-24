@@ -8,7 +8,7 @@
 
 ## 推荐：下载 Windows ZIP
 
-1. 从本仓库 **Releases** 下载 `JiaoyiCourseEvaluation-v0.1.2-windows-x64.zip`。
+1. 从本仓库 **Releases** 下载 `JiaoyiCourseEvaluation-v0.1.3-windows-x64.zip`。
 2. 完整解压到可写文件夹，保留 `_internal` 和附带文件。
 3. 用记事本编辑 `config.ini`，填自己的设置。
 4. 双击 `RunCourseEvaluation.exe`。
@@ -27,6 +27,7 @@ Windows x64，使用已安装的 **Chrome 或 Edge**；包内附 Python、Seleni
 | `browser-option.exe_path` | 浏览器 exe 完整路径；留空自动寻找 |
 | `browser-option.driver_path` | 进阶驱动路径；一般留空 |
 | `evaluation-option.submit` | `false` 预览；`true` 正式提交，仍须当次确认 |
+| `evaluation-option.rating_level` | `highest`（默认最高级）或指定 `1`、`2`、`3` 等等级 |
 | `evaluation-option.max_courses` | 正式处理上限；`0` 为全部有效未完成记录 |
 | `evaluation-option.dry_run_limit` | 预览表单数，默认 `1` |
 | `script-option.headless` | 是否隐藏浏览器；手动登录须为 `false` |
@@ -40,9 +41,27 @@ Windows x64，使用已安装的 **Chrome 或 Edge**；包内附 Python、Seleni
 明确指定 `--config` 时只读该档；存在 INI 时，空账号密码不从旧 `.env` 补入。
 未建立 INI 的旧源代码环境仍兼容原有 JSON／`.env`，但不自动迁移秘密到发布设置。
 
+## 选择评分等级
+
+在 `config.ini` 的 `[evaluation-option]` 中设置：
+
+```ini
+[evaluation-option]
+rating_level = highest
+```
+
+`highest` 自动选择每题的最后一项：五级表单选第 5 级，三级表单选第 3 级。
+需要统一评第 3 级时改为 `rating_level = 3`；填 `1` 则选择每题第一项。
+数字按每题从左到右的选项顺序计算，适用于选项从低到高排列的表单；请先预览确认。
+若任何题目没有指定等级，或该项不可选，程序会停止并提示，不会改用其他等级提交。
+旧配置未填写此项时继续默认最高级。
+
+命令行可临时覆盖配置，例如 `RunCourseEvaluation.exe --rating-level 4 --dry-run`。
+兼容 JSON 的对应字段为 `evaluation.ratingLevel`，可填 `"highest"` 或正整数。
+
 ## 评价行为
 
-- 每列选择最后一个单选项；不同表单次序可能不同，请先预览。
+- 按配置选择每题等级，默认最高级（最后一项）；不同表单次序可能不同，请先预览。
 - 预览会停留在填好的表单，检查后按 Enter 返回；无互动输入时保留该页并结束。
 - 留言默认空白。进阶既有评价设置可用兼容 JSON。
 - 逐项处理有效未完成记录，跨页继续；null 课程字段跳过。
@@ -58,6 +77,7 @@ Windows x64，使用已安装的 **Chrome 或 Edge**；包内附 Python、Seleni
 .\RunCourseEvaluation.exe --diagnose
 .\RunCourseEvaluation.exe --check-browser
 .\RunCourseEvaluation.exe --dry-run --dry-run-limit 1
+.\RunCourseEvaluation.exe --rating-level 3 --dry-run
 .\RunCourseEvaluation.exe --submit --max-courses 1
 .\RunCourseEvaluation.exe --mode schedule
 ```

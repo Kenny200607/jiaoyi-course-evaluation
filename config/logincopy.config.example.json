@@ -31,6 +31,7 @@
     "maxCourses": null,
     "dryRunLimit": 1,
     "ratingStrategy": "last-radio-per-row",
+    "ratingLevel": "highest",
     "ratingValue": "5",
     "comment": "",
     "incompleteStatusLabels": ["未完成", "待评价", "待評價", "Incomplete"],

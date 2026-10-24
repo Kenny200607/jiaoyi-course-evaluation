@@ -37,6 +37,18 @@ def _dotenv(path: Path) -> dict:
     return result
 
 
+def normalize_rating_level(value) -> str | int:
+    if isinstance(value, str):
+        value = value.strip().lower()
+        if value == 'highest':
+            return value
+        if value.isascii() and value.isdecimal():
+            value = int(value)
+    if isinstance(value, int) and not isinstance(value, bool) and value >= 1:
+        return value
+    raise ValueError('rating_level 须为 highest（最高级）或大于等于 1 的整数。')
+
+
 def _ini(path: Path, config: dict) -> dict:
     parser = configparser.ConfigParser(interpolation=None, inline_comment_prefixes=None)
     try:
@@ -46,7 +58,7 @@ def _ini(path: Path, config: dict) -> dict:
     allowed = {
         'user-account': {'username', 'password'},
         'browser-option': {'driver', 'exe_path', 'driver_path'},
-        'evaluation-option': {'submit', 'max_courses', 'dry_run_limit'},
+        'evaluation-option': {'submit', 'max_courses', 'dry_run_limit', 'rating_level'},
         'script-option': {'headless', 'close_browser_on_finish'},
     }
     if parser.defaults() or any(section not in allowed for section in parser.sections()):
@@ -69,6 +81,7 @@ def _ini(path: Path, config: dict) -> dict:
             submit=parser.getboolean('evaluation-option', 'submit', fallback=False),
             maxCourses=parser.getint('evaluation-option', 'max_courses', fallback=0),
             dryRunLimit=parser.getint('evaluation-option', 'dry_run_limit', fallback=1),
+            ratingLevel=get('evaluation-option', 'rating_level', 'highest'),
         )
         for key in ('headless', 'close_browser_on_finish'):
             config['download'][key] = parser.getboolean('script-option', key, fallback=False)
@@ -99,6 +112,9 @@ def validate_config(config: dict, base_dir: Path) -> dict:
                     raise ValueError('找不到指定浏览器或驱动；请检查设置路径，或留空自动检测。')
                 browser[key] = str(path.resolve())
         evaluation = config['evaluation']
+        evaluation['ratingLevel'] = normalize_rating_level(evaluation.get('ratingLevel', 'highest'))
+        if evaluation['ratingLevel'] != 'highest':
+            evaluation['ratingStrategy'] = 'last-radio-per-row'
         if not isinstance(evaluation['submit'], bool):
             raise ValueError('submit 必须为 true 或 false。')
         for key, floor in (('maxCourses', 0), ('dryRunLimit', 1)):
