@@ -22,7 +22,6 @@ PUBLIC_FILES = (
     'THIRD_PARTY_NOTICES.txt', 'CHANGELOG.md', '使用说明.txt',
     'requirements.txt', 'requirements-lock.txt', 'requirements-build.txt',
     'start_evaluation.cmd', 'CourseEvaluation.spec', '.github/workflows/checks.yml',
-    '.github/workflows/portable-windows.yml', 'tools/verify_portable.ps1',
 )
 
 

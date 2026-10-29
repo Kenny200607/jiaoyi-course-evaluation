@@ -8,7 +8,7 @@
 
 ## 推荐：下载 Windows ZIP
 
-1. 从本仓库 **Releases** 下载 `JiaoyiCourseEvaluation-v0.1.3-windows-x64.zip`。
+1. 从本仓库 **Releases** 下载 `JiaoyiCourseEvaluation-v0.1.4-windows-x64.zip`。
 2. 完整解压到可写文件夹，保留 `_internal` 和附带文件。
 3. 用记事本编辑 `config.ini`，填自己的设置。
 4. 双击 `RunCourseEvaluation.exe`。
@@ -122,18 +122,6 @@ $env:TEST_BROWSER = 'Chrome' # 或 Edge
 测试页下载 jQuery／Bootstrap Table，需连网。在 Windows x64 的干净虚拟环境构建。
 成品在 `releases/`，含源代码 ZIP、Windows ZIP 及 `SHA256SUMS.txt`。
 构建只收集公开允许清单，排除私人设置、日志及浏览器资料。
-
-### 在其他 Windows 电脑验证下载包
-
-仓库的 **Actions → Portable Windows verification → Run workflow** 可指定发布版本。
-流程会分别启动全新的 Windows Server 2022 和 2025 虚拟机，直接下载该版本 ZIP，
-核对 SHA-256 和构建提交，在中文含空格路径检查首次启动、空白账号的预览默认值、
-OCR 模型、Chrome／Edge 本地页面和取消提交。测试不登录学校，不使用真实账号密码。
-
-验证过程不安装 Python 或项目依赖，程序启动时移除外部 Python 路径和相关环境变量，
-浏览器驱动使用独立缓存。每台机器的结果和输出保存在该次 Actions 的附件中。
-GitHub 的 Windows 镜像本身预装开发工具；这项验证不等同于在从未安装 Python 的
-普通 Windows 10／11 电脑上认证，也不能代替真实学校页面的人工预览。
 
 ## 授权与来源
 

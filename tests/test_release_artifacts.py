@@ -37,6 +37,10 @@ class ReleaseArtifactTests(unittest.TestCase):
         self.assertFalse((stage/'.env').exists())
         self.assertFalse((stage/'RunCourseEvaluation.exe').exists())
         self.assertFalse((stage/'docs/superpowers').exists())
+        self.assertFalse((stage/'tools/verify_portable.ps1').exists())
+        self.assertFalse((stage/'.github/workflows/portable-windows.yml').exists())
+        self.assertTrue((stage/'tests/test_public_config.py').is_file())
+        self.assertTrue((stage/'tools/source_launcher.py').is_file())
 
     def test_audit_accepts_blank_config_template(self):
         from tools.audit_release import audit_tree

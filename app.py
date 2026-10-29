@@ -9,7 +9,7 @@ from pathlib import Path
 from release_config import FirstRunConfig, app_directory, load_public_config, validate_config
 from privacy import RedactingStream, redact
 
-VERSION = '0.1.3'
+VERSION = '0.1.4'
 APP_NAME = '交医课程评价工具'
 
 

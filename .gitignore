@@ -1,4 +1,6 @@
 /.release-work/
+/.github/workflows/portable-windows.yml
+/tools/verify_portable.ps1
 /.venv/
 /venv/
 /build/
